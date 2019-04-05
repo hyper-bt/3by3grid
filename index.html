@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-44285815-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-44285815-2');
+</script>
+    <meta charset="UTF-8">
+    <title>3by3grid</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-touch-events/1.0.5/jquery.mobile-events.js"></script>
+</head>
+<body id="mainbody">
+<div id="panel" class="panel">
+    <h6 id="delay-label" class="delay">delay: <h6>
+    <select id="delay">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10" selected="selected">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+    </select>
+</div>
+<div id="page" class="text-center">
+    <div class="container">
+        <h1 id="question" class="word">#<h1>
+        <div id="answer" class="answer">#</div>
+        <audio id="player">
+          <source id="media-source" src="#" type="audio/mpeg">
+        </audio>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+
+var sourceFolder = 'audio/'
+var fileNameExtension = ".mp3";
+var sourceFile = [
+"現在進行","現在完成被動","未來完成","過去完成",
+"現在完成進行","未來簡單","過去簡單","現在進行被動",
+"未來被動","過去被動","過去完成被動","未來進行",
+"過去進行","過去完成進行","現在完成","未來完成被動",
+"過去進行被動","現在簡單","未來完成進行","現在被動",
+"未來進行被動"
+];
+
+var ON_START = 0;
+var ON_RUNNING = 1;
+var ON_COMPLETED = 2;
+
+var stepIndex = ON_START;
+var currentQuestionIndex = -1;
+var currentQuestionList = sourceFile.slice();
+var currentAnswerList = [];
+
+var defaultDealy = 10;
+var currentDelay = defaultDealy * 1000;
+
+$("#page").on("tap",function(){
+    console.log("index: " + stepIndex);
+    if (stepIndex == ON_START) {
+        stepIndex = ON_RUNNING;
+        onRunning();
+    } else if (stepIndex == ON_RUNNING) {
+        // do nothing
+    } else if (stepIndex == ON_COMPLETED) {
+        stepIndex = ON_START;
+        onStart();
+    }
+});
+
+$('#delay').on('change', function() {
+    var delay = $('#delay option:selected').text();
+    if (delay >= 1 && delay < 15) {
+        currentDelay = delay * 1000;
+        console.log("set delay: " + delay);
+    }
+});
+
+function onStart() {
+    console.log("onStart");
+    $("#question").text("Click and start");
+    $("#answer").text("#");
+}
+
+function onRunning() {
+    console.log("onRunning");
+    // get the random index
+    var index = getRandom(1, currentQuestionList.length);
+    index = index - 1;
+    if (index >= 0 && index < currentQuestionList.length) {
+        var fileName = currentQuestionList[index];
+        var mediaSourcePath = sourceFolder + fileName + fileNameExtension;
+        var question = fileName;
+        // update view
+        $("#question").text(question);
+        // update player
+        var audio = document.getElementById("player");
+        if (audio !== null) {
+            audio.src = mediaSourcePath;
+        }
+        var check = currentQuestionList.indexOf(currentQuestionList[index]);
+        if (check > -1) {
+            currentQuestionList.splice(index, 1);
+        }
+        currentAnswerList.push(question);
+        playMedia();
+        window.setTimeout(function() {
+            onRunning();
+        }, currentDelay);
+    } else {
+        stepIndex = ON_COMPLETED;
+        onCompleted();
+    }
+}
+
+function onCompleted() {
+    console.log("onCompleted");
+    $("#question").text("Click and continue");
+    var answer = "";
+    for (var i = 0; i < currentAnswerList.length; i++) {
+        answer += i + ". " + currentAnswerList[i] + "\n";
+    }
+    $("#answer").text(answer);
+    currentAnswerList = [];
+    currentQuestionList = sourceFile.slice();
+}
+
+function getRandom(aMix, aMax) {
+    return Math.floor(Math.random() * (aMax - aMix + 1)) + aMix;
+};
+
+function playMedia() {
+    var audio = document.getElementById("player");
+    if (audio !== undefined) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.play();
+    }
+}
+
+// first init
+onStart();
+
+</script>
+</html>
